@@ -558,7 +558,7 @@ async function init(){
       sel.innerHTML=i===0?'<option value="">Todas</option>':'<option value="">Todas (Trending)</option>';
       tp.forEach(p=>{providersCache[p.provider_id]=p;sel.innerHTML+=`<option value="${p.provider_id}">${p.provider_name}</option>`;});
     });
-    setDefaultDates();loadDiscover();loadTop10();loadFavoritesPage();loadPersonalRecs();
+    setDefaultDates();loadTop10();loadFavoritesPage();
   }catch(e){console.error('Init error:',e);}
 }
 
