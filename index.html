@@ -398,43 +398,43 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
     <!-- RECOMMEND -->
     <div class="page" id="page-recommend">
 
-      <!-- BUSCADOR 1: buscar título concreto -->
-      <div style="margin-bottom:32px">
-        <h2 class="section-title" style="margin-bottom:6px">🔎 Buscar título</h2>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Busca una peli o serie, añádela a favoritos ❤️ y ve títulos similares.</p>
-        <div class="recommend-input-area">
-          <input type="text" id="recommendInput" placeholder="Escribe una película o serie..." autocomplete="off"/>
-          <div class="autocomplete-list" id="autocompleteList"></div>
-          <button id="clearSearchBtn" onclick="clearSearch()" style="display:none;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">✕ Limpiar</button>
+      <!-- RECOMENDACIONES PERSONALIZADAS POR TIPO + GÉNERO -->
+      <h2 class="section-title" style="margin-bottom:6px">🎯 Para ti</h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px">Elige tipo y género — el sistema recomienda títulos basándose en tus favoritos guardados.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:0">
+        <div class="control-group"><label>Tipo</label>
+          <select id="recType">
+            <option value="movie">🎬 Películas</option>
+            <option value="tv">📺 Series</option>
+          </select>
         </div>
-        <div id="searchedItemResult"></div>
-        <div id="recommendResults"></div>
-      </div>
-
-      <!-- BUSCADOR 2: explorar por categoría -->
-      <div style="margin-bottom:32px">
-        <h2 class="section-title" style="margin-bottom:6px">🗂 Explorar por categoría</h2>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Elige tipo y género para ver los 20 mejores títulos de esa categoría.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:0">
-          <div class="control-group"><label>Tipo</label><select id="catType"><option value="movie">🎬 Películas</option><option value="tv">📺 Series</option></select></div>
-          <div class="control-group"><label>Género</label><select id="catGenre"><option value="">— Elige género —</option></select></div>
-          <div class="control-group"><label>Ordenar</label>
-            <select id="catSort">
-              <option value="popularity.desc">🔥 Popularidad</option>
-              <option value="vote_average.desc">⭐ Mejor valoradas</option>
-              <option value="primary_release_date.desc">🆕 Más recientes</option>
-            </select>
-          </div>
-          <button class="btn-search" onclick="loadCategoryExplorer()">🔍 Explorar</button>
+        <div class="control-group"><label>Género</label>
+          <select id="recGenre"><option value="">Todos los géneros</option></select>
         </div>
-        <div id="categoryResults" style="margin-top:20px"></div>
+        <div class="control-group"><label>Ordenar</label>
+          <select id="recSort">
+            <option value="score">🎯 Mejor encaje</option>
+            <option value="popularity.desc">🔥 Popularidad</option>
+            <option value="vote_average.desc">⭐ Mejor valoradas</option>
+          </select>
+        </div>
+        <button class="btn-search" onclick="loadPersonalRecs()">🔍 Recomendar</button>
       </div>
+      <div id="personalRecs" style="margin-top:20px"></div>
 
-      <!-- RECOMENDACIONES PERSONALES -->
-      <hr class="section-divider"/>
-      <h2 class="section-title" style="margin-bottom:6px">🎯 Recomendado para ti</h2>
-      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px">Basado en tus favoritos, separado por películas y series.</p>
-      <div id="personalRecs"></div>
+      <!-- DIVISOR -->
+      <hr class="section-divider" style="margin-top:40px"/>
+
+      <!-- BUSCADOR DE TÍTULO CONCRETO -->
+      <h2 class="section-title" style="margin-bottom:6px">🔎 Buscar título y similares</h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Busca cualquier peli o serie, añádela a favoritos ❤️ y descubre títulos similares.</p>
+      <div class="recommend-input-area">
+        <input type="text" id="recommendInput" placeholder="Escribe una película o serie..." autocomplete="off"/>
+        <div class="autocomplete-list" id="autocompleteList"></div>
+        <button id="clearSearchBtn" onclick="clearSearch()" style="display:none;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">✕ Limpiar</button>
+      </div>
+      <div id="searchedItemResult"></div>
+      <div id="recommendResults"></div>
 
     </div>
   </main>
@@ -546,10 +546,10 @@ async function init(){
     const[mg,tg,wp]=await Promise.all([tmdb('/genre/movie/list'),tmdb('/genre/tv/list'),tmdb('/watch/providers/movie',{watch_region:WATCH_REGION})]);
     const allG=[...mg.genres,...tg.genres];allG.forEach(g=>genresMap[g.id]=g.name);
     const gs=document.getElementById('selGenre');gs.innerHTML='<option value="">Todos</option>';
-    const catGs=document.getElementById('catGenre');catGs.innerHTML='<option value="">— Elige género —</option>';
+    const recGs=document.getElementById('recGenre');recGs.innerHTML='<option value="">Todos los géneros</option>';
     const seen=new Set();allG.forEach(g=>{if(seen.has(g.id))return;seen.add(g.id);
       gs.innerHTML+=`<option value="${g.id}">${g.name}</option>`;
-      catGs.innerHTML+=`<option value="${g.id}">${g.name}</option>`;
+      recGs.innerHTML+=`<option value="${g.id}">${g.name}</option>`;
     });
     const mainP=[8,119,337,350,2,3,384,149,619,1899,63,35,531,283,521];
     const pl=wp.results.filter(p=>mainP.includes(p.provider_id));pl.sort((a,b)=>a.display_priority-b.display_priority);
@@ -755,180 +755,110 @@ function loadFavoritesPage(){
   h+='</div>';c.innerHTML=h;
 }
 
-// ===== PERSONAL RECS — ALGORITMO MULTI-FACTOR =====
-// Factores usados:
-// 1. Géneros favoritos ponderados (frecuencia en favoritos)
-// 2. Coincidencia con TODOS los favoritos vía /recommendations + /similar
-// 3. Score de relevancia: géneros compartidos × peso + popularidad normalizada + rating
-// 4. Bonus si coinciden múltiples géneros top
-// 5. Penalización por ya estar en favoritos
-// 6. Ordenación final por score compuesto, no por popularidad bruta
-
+// ===== PERSONAL RECS — ON DEMAND, MULTI-FACTOR + GENRE FILTER =====
 async function loadPersonalRecs(){
   const c=document.getElementById('personalRecs');
+  const type=document.getElementById('recType').value;
+  const filterGenre=document.getElementById('recGenre').value;
+  const sortMode=document.getElementById('recSort').value;
+  const typeName=type==='movie'?'películas':'series';
+  const genreName=filterGenre?document.getElementById('recGenre').options[document.getElementById('recGenre').selectedIndex].text:'';
+
   if(userFavorites.length===0){
     c.innerHTML='<div class="empty-state"><div class="icon">💡</div><h3>Añade favoritos para ver recomendaciones</h3><p>Cuantos más añadas, más afina el algoritmo</p></div>';
     return;
   }
+
+  const favOfType=userFavorites.filter(f=>f.tipo===type);
+  if(favOfType.length===0){
+    c.innerHTML=`<div class="empty-state"><div class="icon">${type==='movie'?'🎬':'📺'}</div><h3>No tienes ${typeName} en favoritos</h3><p>Añade algunas para obtener recomendaciones</p></div>`;
+    return;
+  }
+
   c.innerHTML='<div class="loading-container"><div class="spinner"></div><div class="loading-text">Analizando tus gustos...</div></div>';
 
   try{
-    const favMovies=userFavorites.filter(f=>f.tipo==='movie');
-    const favSeries=userFavorites.filter(f=>f.tipo==='tv');
     const seenIds=new Set(userFavorites.map(f=>String(f.tmdb_id)));
 
-    // --- PASO 1: construir perfil de géneros ponderado por tipo ---
-    function buildGenreProfile(favList){
-      const freq={};
-      favList.forEach(f=>{
-        if(!f.genero_ids)return;
-        f.genero_ids.split(',').forEach((gid,i)=>{
-          const id=gid.trim();if(!id)return;
-          // primer género = peso 3, segundo = peso 2, resto = peso 1
-          freq[id]=(freq[id]||0)+(i===0?3:i===1?2:1);
-        });
+    // --- Perfil de géneros ---
+    const freq={};
+    favOfType.forEach(f=>{
+      if(!f.genero_ids)return;
+      f.genero_ids.split(',').forEach((gid,i)=>{
+        const id=gid.trim();if(!id)return;
+        freq[id]=(freq[id]||0)+(i===0?3:i===1?2:1);
       });
-      const total=Object.values(freq).reduce((s,v)=>s+v,0)||1;
-      // normalizar a 0-1
-      const profile={};
-      Object.entries(freq).forEach(([id,v])=>profile[id]=v/total);
-      return profile;
+    });
+    const total=Object.values(freq).reduce((s,v)=>s+v,0)||1;
+    const genreProfile={};
+    Object.entries(freq).forEach(([id,v])=>genreProfile[id]=v/total);
+
+    // --- Candidatos de todos los favoritos del tipo ---
+    const candidates={};
+    for(const fav of favOfType){
+      try{
+        const[recs,sim]=await Promise.all([
+          tmdb(`/${type}/${fav.tmdb_id}/recommendations`),
+          tmdb(`/${type}/${fav.tmdb_id}/similar`)
+        ]);
+        [...(recs.results||[]),...(sim.results||[])].forEach(item=>{
+          const sid=String(item.id);
+          if(seenIds.has(sid))return;
+          if(dismissedRecs.includes(sid))return;
+          // Filtrar por género si está seleccionado
+          if(filterGenre && !(item.genre_ids||[]).includes(parseInt(filterGenre)))return;
+          if(!candidates[sid]){item._sourceCount=1;candidates[sid]=item;}
+          else candidates[sid]._sourceCount++;
+        });
+      }catch{}
     }
 
-    const movieGenreProfile=buildGenreProfile(favMovies);
-    const seriesGenreProfile=buildGenreProfile(favSeries);
+    let results=Object.values(candidates);
 
-    // --- PASO 2: recopilar candidatos de TODOS los favoritos ---
-    async function gatherCandidates(favList, tipo){
-      const candidates={};// id -> item
-      // Usamos TODOS los favoritos, no solo una muestra
-      for(const fav of favList){
-        try{
-          const [recs, sim]=await Promise.all([
-            tmdb(`/${tipo}/${fav.tmdb_id}/recommendations`),
-            tmdb(`/${tipo}/${fav.tmdb_id}/similar`)
-          ]);
-          const all=[...(recs.results||[]),...(sim.results||[])];
-          all.forEach(item=>{
-            const sid=String(item.id);
-            if(seenIds.has(sid))return;
-            if(!candidates[sid]){
-              item._resolvedType=tipo;
-              item._sourceCount=1;
-              candidates[sid]=item;
-            } else {
-              candidates[sid]._sourceCount++; // apareció en más favoritos = más relevante
-            }
-          });
-        }catch{}
-      }
-      return Object.values(candidates);
-    }
-
-    // --- PASO 3: scoring multi-factor ---
-    function scoreItem(item, genreProfile){
+    // --- Scoring ---
+    results.forEach(item=>{
       let score=0;
       const genres=item.genre_ids||[];
-      const topGenres=Object.entries(genreProfile).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]);
-
-      // Factor A: coincidencia de géneros ponderada por perfil del usuario
-      genres.forEach(gid=>{
-        const gStr=String(gid);
-        if(genreProfile[gStr]) score+=genreProfile[gStr]*40; // hasta ~40 pts por género
-      });
-
-      // Factor B: bonus si coinciden 2+ géneros del top 3
-      const top3=topGenres.slice(0,3);
+      const top3=Object.entries(genreProfile).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+      genres.forEach(gid=>{if(genreProfile[String(gid)])score+=genreProfile[String(gid)]*40;});
       const matches=genres.filter(g=>top3.includes(String(g))).length;
-      if(matches>=2) score+=15;
-      if(matches>=3) score+=10;
-
-      // Factor C: sourceCount — cuántos favoritos distintos lo recomiendan
+      if(matches>=2)score+=15;if(matches>=3)score+=10;
       score+=(item._sourceCount||1)*12;
+      score+=((item.vote_average||0)/10)*20;
+      score+=Math.log10((item.popularity||0)+1)*3;
+      if((item.vote_count||0)<100)score-=10;
+      if((item.vote_count||0)<20)score-=15;
+      item._score=score;
+    });
 
-      // Factor D: rating normalizado (0-10 → 0-20 pts)
-      const rating=item.vote_average||0;
-      if(rating>0) score+=(rating/10)*20;
+    // --- Ordenar ---
+    if(sortMode==='score') results.sort((a,b)=>b._score-a._score);
+    else if(sortMode==='popularity.desc') results.sort((a,b)=>(b.popularity||0)-(a.popularity||0));
+    else if(sortMode==='vote_average.desc') results.sort((a,b)=>(b.vote_average||0)-(a.vote_average||0));
 
-      // Factor E: popularidad normalizada logarítmica (no domina el score)
-      const pop=item.popularity||0;
-      if(pop>0) score+=Math.log10(pop+1)*3;
+    const top=results.slice(0,24);
 
-      // Factor F: penalizar si tiene pocos votos (menos de 100 = poco fiable)
-      if((item.vote_count||0)<100) score-=10;
-      if((item.vote_count||0)<20) score-=15;
-
-      return score;
+    if(top.length===0){
+      c.innerHTML=`<div class="empty-state"><div class="icon">🤔</div><h3>Sin resultados</h3><p>Prueba con otro género o añade más favoritos de ${typeName}</p></div>`;
+      return;
     }
 
-    // --- PASO 4: ejecutar para películas y series en paralelo ---
-    const [movieCandidates, seriesCandidates]=await Promise.all([
-      favMovies.length>0 ? gatherCandidates(favMovies,'movie') : Promise.resolve([]),
-      favSeries.length>0 ? gatherCandidates(favSeries,'tv') : Promise.resolve([])
-    ]);
+    // --- Providers ---
+    const withP=await Promise.all(top.map(async it=>{
+      try{const w=await tmdb(`/${type}/${it.id}/watch/providers`);it._providers=w.results?.ES?.flatrate||[];}
+      catch{it._providers=[];}return it;
+    }));
 
-    // Puntuar y ordenar, filtrando descartados
-    movieCandidates.forEach(m=>{ m._score=scoreItem(m,movieGenreProfile); });
-    seriesCandidates.forEach(s=>{ s._score=scoreItem(s,seriesGenreProfile); });
+    // Géneros detectados
+    const topGenreNames=Object.entries(genreProfile).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([id])=>genresMap[id]).filter(Boolean).join(', ');
+    const label=filterGenre?`${genreName} · `:'';
 
-    const topMovies=movieCandidates
-      .filter(m=>!dismissedRecs.includes(String(m.id)))
-      .sort((a,b)=>b._score-a._score).slice(0,24);
-    const topSeries=seriesCandidates
-      .filter(s=>!dismissedRecs.includes(String(s.id)))
-      .sort((a,b)=>b._score-a._score).slice(0,24);
-
-    // --- PASO 5: fetch providers en paralelo para los top ---
-    const [moviesWithP, seriesWithP]=await Promise.all([
-      Promise.all(topMovies.map(async it=>{
-        try{const w=await tmdb(`/movie/${it.id}/watch/providers`);it._providers=w.results?.ES?.flatrate||[];}
-        catch{it._providers=[];}return it;
-      })),
-      Promise.all(topSeries.map(async it=>{
-        try{const w=await tmdb(`/tv/${it.id}/watch/providers`);it._providers=w.results?.ES?.flatrate||[];}
-        catch{it._providers=[];}return it;
-      }))
-    ]);
-
-    // Géneros top para mostrar al usuario qué perfil detectó
-    function topGenreNames(profile, n=3){
-      return Object.entries(profile)
-        .sort((a,b)=>b[1]-a[1]).slice(0,n)
-        .map(([id])=>genresMap[id]).filter(Boolean).join(', ');
-    }
-
-    let html='<div>';
-
-    // PELÍCULAS
-    if(favMovies.length>0){
-      const topG=topGenreNames(movieGenreProfile);
-      html+=`<h2 class="section-title">🎬 Películas para ti <span class="badge">${moviesWithP.length}</span></h2>`;
-      if(topG) html+=`<p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:16px">Basado en tus géneros favoritos: <strong style="color:var(--accent)">${topG}</strong></p>`;
-      if(moviesWithP.length>0){
-        html+=`<div class="movie-grid">${moviesWithP.map(m=>renderCard(m,'movie',true)).join('')}</div>`;
-      } else {
-        html+=`<div class="empty-state" style="padding:30px 0"><p>Añade más películas a favoritos</p></div>`;
-      }
-    } else {
-      html+=`<h2 class="section-title">🎬 Películas para ti</h2><p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:32px">Añade películas a favoritos para ver sugerencias aquí.</p>`;
-    }
-
-    // SERIES
-    if(favSeries.length>0){
-      const topG=topGenreNames(seriesGenreProfile);
-      html+=`<h2 class="section-title" style="margin-top:40px">📺 Series para ti <span class="badge">${seriesWithP.length}</span></h2>`;
-      if(topG) html+=`<p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:16px">Basado en tus géneros favoritos: <strong style="color:var(--accent)">${topG}</strong></p>`;
-      if(seriesWithP.length>0){
-        html+=`<div class="movie-grid">${seriesWithP.map(m=>renderCard(m,'tv',true)).join('')}</div>`;
-      } else {
-        html+=`<div class="empty-state" style="padding:30px 0"><p>Añade más series a favoritos</p></div>`;
-      }
-    } else {
-      html+=`<h2 class="section-title" style="margin-top:40px">📺 Series para ti</h2><p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:32px">Añade series a favoritos para ver sugerencias aquí.</p>`;
-    }
-
-    html+='</div>';
-    c.innerHTML=html;
+    c.innerHTML=`
+      <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:16px">
+        ${label}${withP.length} ${typeName} para ti
+        ${topGenreNames?`· géneros detectados: <strong style="color:var(--accent)">${topGenreNames}</strong>`:''}
+      </p>
+      <div class="movie-grid">${withP.map(m=>renderCard(m,type,true)).join('')}</div>`;
 
   }catch(e){
     c.innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><h3>Error</h3><p>${e.message}</p></div>`;
@@ -995,45 +925,6 @@ async function openModal(id,type){
 function closeModal(){document.getElementById('modalOverlay').classList.remove('active');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-// ===== CATEGORY EXPLORER =====
-async function loadCategoryExplorer(){
-  if(!API_KEY)return;
-  const c=document.getElementById('categoryResults');
-  const type=document.getElementById('catType').value;
-  const genre=document.getElementById('catGenre').value;
-  const sort=document.getElementById('catSort').value;
-
-  if(!genre){showToast('Elige un género primero');return;}
-
-  const genreName=document.getElementById('catGenre').options[document.getElementById('catGenre').selectedIndex].text;
-  c.innerHTML='<div class="loading-container" style="padding:40px 0"><div class="spinner"></div><div class="loading-text">Explorando...</div></div>';
-
-  try{
-    const params={
-      sort_by:sort,
-      watch_region:WATCH_REGION,
-      with_watch_monetization_types:'flatrate|free|ads',
-      with_genres:genre,
-      'vote_count.gte':sort==='vote_average.desc'?100:20,
-      page:1
-    };
-    const data=await tmdb(`/discover/${type}`,params);
-    if(!data.results.length){c.innerHTML='<div class="empty-state" style="padding:40px 0"><div class="icon">🔍</div><h3>Sin resultados</h3></div>';return;}
-
-    const top=data.results.slice(0,20);
-    const withP=await Promise.all(top.map(async it=>{
-      try{const w=await tmdb(`/${type}/${it.id}/watch/providers`);it._providers=w.results?.ES?.flatrate||[];}
-      catch{it._providers=[];}return it;
-    }));
-
-    const sortLabel={'popularity.desc':'más populares','vote_average.desc':'mejor valoradas','primary_release_date.desc':'más recientes'}[sort]||'';
-    c.innerHTML=`<p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:16px">Top 20 ${type==='movie'?'películas':'series'} de <strong style="color:var(--accent)">${genreName}</strong> — ${sortLabel}</p>
-      <div class="movie-grid">${withP.map(m=>renderCard(m,type,true)).join('')}</div>`;
-  }catch(e){
-    c.innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><h3>Error</h3><p>${e.message}</p></div>`;
-  }
-}
-
 // ===== NAV (desktop + mobile sync) =====
 function navigateTo(page) {
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
@@ -1043,7 +934,6 @@ function navigateTo(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=document.getElementById(`page-${page}`);if(pg)pg.classList.add('active');
   if(page==='favorites')loadFavoritesPage();
-  if(page==='recommend')loadPersonalRecs();
   window.scrollTo(0,0);
 }
 
