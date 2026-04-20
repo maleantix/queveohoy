@@ -331,6 +331,7 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
       <div class="recommend-input-area">
         <input type="text" id="recommendInput" placeholder="Escribe una película o serie..." autocomplete="off"/>
         <div class="autocomplete-list" id="autocompleteList"></div>
+        <button id="clearSearchBtn" onclick="clearSearch()" style="display:none;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">✕ Limpiar</button>
       </div>
       <!-- searched item card shown here -->
       <div id="searchedItemResult"></div>
@@ -636,9 +637,18 @@ recI.addEventListener('input',()=>{
 
 document.addEventListener('click',e=>{if(!e.target.closest('.recommend-input-area'))acL.classList.remove('active');});
 
+function clearSearch(){
+  document.getElementById('recommendInput').value='';
+  document.getElementById('searchedItemResult').innerHTML='';
+  document.getElementById('recommendResults').innerHTML='';
+  document.getElementById('clearSearchBtn').style.display='none';
+  document.getElementById('autocompleteList').classList.remove('active');
+}
+
 async function selectRecommend(id,type,title){
   acL.classList.remove('active');
   recI.value=title;
+  document.getElementById('clearSearchBtn').style.display='block';
   const itemC=document.getElementById('searchedItemResult');
   const recsC=document.getElementById('recommendResults');
   itemC.innerHTML='<div class="loading-container" style="padding:40px 0"><div class="spinner"></div><div class="loading-text">Cargando...</div></div>';
