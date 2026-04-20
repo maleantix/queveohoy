@@ -193,23 +193,96 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
 .fav-stat strong { display:block; font-size:1.4rem; color:var(--accent); margin-bottom:2px; }
 
 /* TOAST */
-.toast { position:fixed; bottom:24px; right:24px; padding:14px 24px; border-radius:var(--radius-sm); background:var(--bg-card); border:1px solid var(--accent); color:var(--text-primary); font-size:0.9rem; font-weight:500; box-shadow:var(--shadow-lg); z-index:300; animation:toastIn 0.3s ease,toastOut 0.3s ease 2.7s forwards; }
+.toast { position:fixed; bottom:80px; right:16px; padding:14px 24px; border-radius:var(--radius-sm); background:var(--bg-card); border:1px solid var(--accent); color:var(--text-primary); font-size:0.9rem; font-weight:500; box-shadow:var(--shadow-lg); z-index:300; animation:toastIn 0.3s ease,toastOut 0.3s ease 2.7s forwards; }
+@media(min-width:769px){ .toast { bottom:24px; right:24px; } }
 @keyframes toastIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 @keyframes toastOut { from{opacity:1} to{opacity:0;transform:translateY(20px)} }
 
+/* GLOBAL SEARCH BAR */
+.global-search-wrap { position:relative; flex:1; max-width:340px; }
+.global-search-wrap input { width:100%; padding:9px 14px 9px 36px; border-radius:20px; border:1px solid var(--border); background:var(--surface); color:var(--text-primary); font-family:'Outfit',sans-serif; font-size:0.88rem; transition:var(--transition); }
+.global-search-wrap input:focus { outline:none; border-color:var(--accent); background:var(--bg-card); box-shadow:0 0 0 3px var(--accent-dim); }
+.global-search-wrap .gs-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:0.85rem; pointer-events:none; }
+.global-search-results { position:absolute; top:calc(100% + 8px); left:0; right:0; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); max-height:420px; overflow-y:auto; z-index:150; box-shadow:var(--shadow-lg); display:none; }
+.global-search-results.active { display:block; }
+.gs-item { display:flex; align-items:center; gap:12px; padding:10px 14px; cursor:pointer; transition:var(--transition); border-bottom:1px solid var(--border); }
+.gs-item:last-child { border-bottom:none; }
+.gs-item:hover { background:var(--surface); }
+.gs-item img { width:36px; height:54px; object-fit:cover; border-radius:5px; flex-shrink:0; }
+.gs-item .gs-no-img { width:36px; height:54px; background:var(--surface); border-radius:5px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+.gs-item .gs-info { flex:1; min-width:0; }
+.gs-item .gs-title { font-size:0.88rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gs-item .gs-meta { font-size:0.75rem; color:var(--text-muted); margin-top:2px; }
+.gs-item .gs-rating { font-size:0.78rem; color:var(--accent); font-weight:600; flex-shrink:0; }
+
 /* PAGE / RESPONSIVE */
 .page { display:none; } .page.active { display:block; }
+
+/* DESKTOP NAV — visible on wide screens */
+.nav-tabs { display:flex; gap:4px; background:var(--bg-secondary); padding:4px; border-radius:10px; }
+
+/* MOBILE BOTTOM NAV */
+.mobile-nav {
+  display:none;
+  position:fixed;
+  bottom:0; left:0; right:0;
+  z-index:120;
+  background:var(--bg-secondary);
+  border-top:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  padding:8px 0 max(8px, env(safe-area-inset-bottom));
+}
+.mobile-nav-inner { display:flex; justify-content:space-around; align-items:center; }
+.mob-tab { display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 12px; border:none; background:transparent; color:var(--text-muted); font-family:'Outfit',sans-serif; font-size:0.62rem; font-weight:500; cursor:pointer; transition:var(--transition); border-radius:10px; min-width:60px; }
+.mob-tab .mob-icon { font-size:1.3rem; line-height:1; }
+.mob-tab.active { color:var(--accent); }
+.mob-tab.active .mob-icon { transform:scale(1.1); }
+
 @media(max-width:768px) {
-  .header-inner { flex-wrap:wrap; height:auto; padding:12px 0; gap:8px; }
-  .nav-tabs { order:3; width:100%; justify-content:center; overflow-x:auto; }
-  .header-right { order:2; }
+  /* hide desktop nav, show mobile nav */
+  .nav-tabs { display:none; }
+  .mobile-nav { display:block; }
+
+  /* header simplification */
+  .header-inner { height:56px; padding:0 16px; }
+  .logo { font-size:1.1rem; }
+  .logo-icon { width:28px; height:28px; font-size:14px; }
   .user-badge .uname { display:none; }
-  .controls { flex-direction:column; }
-  .movie-grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; }
+  .global-search-wrap { max-width:none; flex:1; }
+
+  /* main padding accounts for bottom nav */
+  main { padding:12px 12px 80px; }
+
+  /* controls stack nicely */
+  .controls { flex-direction:column; gap:10px; }
+  .control-group { width:100%; }
+  select,.date-input { min-width:100%; width:100%; }
+  .date-pills { flex-wrap:wrap; gap:6px; }
+  .pill { flex:1; text-align:center; min-width:calc(50% - 4px); }
+  .btn-reset { width:100%; justify-content:center; }
+
+  /* grid: 2 columns on mobile */
+  .movie-grid { grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:24px; }
+
+  /* top10: horizontal scroll is ok on mobile but constrained */
+  .top10-list { gap:10px; padding-bottom:8px; }
+  .top10-card { min-width:130px; }
+  .top10-card img { width:130px; height:195px; }
+  .top10-card .rank { font-size:2.8rem; bottom:40px; }
+
+  /* modal */
+  .modal { border-radius:16px 16px 0 0; max-height:95vh; margin-top:auto; }
+  .modal-overlay { align-items:flex-end; padding:0; }
+  .modal-backdrop { height:160px; }
   .modal-header { flex-direction:column; align-items:center; text-align:center; }
-  .modal-backdrop { height:180px; }
-  main { padding:16px; }
-  .login-box { padding:32px 24px; }
+  .modal-body { padding:0 16px 24px; }
+
+  /* login */
+  .login-box { padding:32px 20px; }
+
+  /* search */
+  .global-search-results { position:fixed; top:56px; left:0; right:0; border-radius:0 0 var(--radius) var(--radius); max-height:60vh; }
 }
 </style>
 </head>
@@ -232,12 +305,22 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
   <header>
     <div class="header-inner">
       <div class="logo"><div class="logo-icon">📡</div>Stream<span>Radar</span></div>
+
+      <!-- Desktop nav -->
       <nav class="nav-tabs">
         <button class="nav-tab active" data-page="discover">🔍 Descubrir</button>
         <button class="nav-tab" data-page="top10">🏆 Top 10</button>
         <button class="nav-tab" data-page="favorites">❤️ Favoritos</button>
         <button class="nav-tab" data-page="recommend">💡 Para ti</button>
       </nav>
+
+      <!-- Global search -->
+      <div class="global-search-wrap" id="globalSearchWrap">
+        <span class="gs-icon">🔍</span>
+        <input type="text" id="globalSearchInput" placeholder="Buscar película o serie..." autocomplete="off"/>
+        <div class="global-search-results" id="globalSearchResults"></div>
+      </div>
+
       <div class="header-right">
         <div class="user-badge"><span class="user-avatar" id="userAvatar">U</span><span class="uname" id="userName">Usuario</span></div>
         <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
@@ -245,6 +328,17 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
       </div>
     </div>
   </header>
+
+  <!-- Mobile bottom nav -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav-inner">
+      <button class="mob-tab active" data-page="discover"><span class="mob-icon">🔍</span>Descubrir</button>
+      <button class="mob-tab" data-page="top10"><span class="mob-icon">🏆</span>Top 10</button>
+      <button class="mob-tab" data-page="favorites"><span class="mob-icon">❤️</span>Favoritos</button>
+      <button class="mob-tab" data-page="recommend"><span class="mob-icon">💡</span>Para ti</button>
+      <button class="mob-tab" data-page="__settings" onclick="handleLogout()"><span class="mob-icon">🚪</span>Salir</button>
+    </div>
+  </nav>
   <main>
     <!-- DISCOVER -->
     <div class="page active" id="page-discover">
@@ -533,14 +627,69 @@ async function openModal(id,type){
 function closeModal(){document.getElementById('modalOverlay').classList.remove('active');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-// ===== NAV =====
-document.querySelectorAll('.nav-tab').forEach(tab=>{tab.addEventListener('click',()=>{
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(`page-${tab.dataset.page}`).classList.add('active');
-  if(tab.dataset.page==='favorites')loadFavoritesPage();if(tab.dataset.page==='recommend')loadPersonalRecs();
-});});
+// ===== NAV (desktop + mobile sync) =====
+function navigateTo(page) {
+  // update desktop tabs
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const dt=document.querySelector(`.nav-tab[data-page="${page}"]`);if(dt)dt.classList.add('active');
+  // update mobile tabs
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  const mt=document.querySelector(`.mob-tab[data-page="${page}"]`);if(mt)mt.classList.add('active');
+  // show page
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById(`page-${page}`);if(pg)pg.classList.add('active');
+  if(page==='favorites')loadFavoritesPage();
+  if(page==='recommend')loadPersonalRecs();
+  window.scrollTo(0,0);
+}
+
+document.querySelectorAll('.nav-tab').forEach(tab=>{tab.addEventListener('click',()=>navigateTo(tab.dataset.page));});
+document.querySelectorAll('.mob-tab[data-page]').forEach(tab=>{tab.addEventListener('click',()=>{if(tab.dataset.page==='__settings')return;navigateTo(tab.dataset.page);});});
+
 ['selType','selProvider','selGenre'].forEach(id=>{document.getElementById(id).addEventListener('change',()=>{document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));loadDiscover();});});
 ['selTypeTop','selProviderTop'].forEach(id=>{document.getElementById(id).addEventListener('change',loadTop10);});
+
+// ===== GLOBAL SEARCH =====
+let gsT;
+const gsInput=document.getElementById('globalSearchInput');
+const gsResults=document.getElementById('globalSearchResults');
+
+gsInput.addEventListener('input',()=>{
+  clearTimeout(gsT);const q=gsInput.value.trim();
+  if(q.length<2){gsResults.classList.remove('active');gsResults.innerHTML='';return;}
+  gsT=setTimeout(async()=>{
+    if(!API_KEY)return;
+    try{
+      const d=await tmdb('/search/multi',{query:q});
+      const f=d.results.filter(r=>r.media_type==='movie'||r.media_type==='tv').slice(0,8);
+      if(!f.length){gsResults.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.85rem">Sin resultados</div>';gsResults.classList.add('active');return;}
+      gsResults.innerHTML=f.map(r=>{
+        const t=r.title||r.name,y=(r.release_date||r.first_air_date||'').substring(0,4);
+        const p=r.poster_path?`${TMDB_IMG}w92${r.poster_path}`:'';
+        const rating=r.vote_average?r.vote_average.toFixed(1):'';
+        const type=r.media_type==='tv'?'📺 Serie':'🎬 Película';
+        return `<div class="gs-item" onclick="gsSelect(${r.id},'${r.media_type}')">
+          ${p?`<img src="${p}" alt="${t}"/>`:`<div class="gs-no-img">${r.media_type==='tv'?'📺':'🎬'}</div>`}
+          <div class="gs-info"><div class="gs-title">${t}</div><div class="gs-meta">${type}${y?' · '+y:''}</div></div>
+          ${rating?`<div class="gs-rating">⭐ ${rating}</div>`:''}
+        </div>`;
+      }).join('');
+      gsResults.classList.add('active');
+    }catch{gsResults.classList.remove('active');}
+  },300);
+});
+
+function gsSelect(id,type){
+  gsResults.classList.remove('active');gsInput.value='';
+  openModal(id,type);
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#globalSearchWrap'))gsResults.classList.remove('active');
+  if(!e.target.closest('.recommend-input-area'))acL.classList.remove('active');
+});
+
+gsInput.addEventListener('keydown',e=>{if(e.key==='Escape'){gsResults.classList.remove('active');gsInput.value='';}});
 
 // ===== SEARCH RECOMMEND =====
 let acT;const recI=document.getElementById('recommendInput'),acL=document.getElementById('autocompleteList');
@@ -548,7 +697,6 @@ recI.addEventListener('input',()=>{clearTimeout(acT);const q=recI.value.trim();i
 acT=setTimeout(async()=>{try{const d=await tmdb('/search/multi',{query:q});const f=d.results.filter(r=>r.media_type==='movie'||r.media_type==='tv').slice(0,8);if(!f.length){acL.classList.remove('active');return;}
 acL.innerHTML=f.map(r=>{const t=r.title||r.name,y=(r.release_date||r.first_air_date||'').substring(0,4),p=r.poster_path?`${TMDB_IMG}w92${r.poster_path}`:'';
 return `<div class="autocomplete-item" onclick="selectRecommend(${r.id},'${r.media_type}','${t.replace(/'/g,"\\'")}')">${p?`<img src="${p}" alt=""/>`:'<div style="width:32px;height:48px;background:var(--surface);border-radius:4px"></div>'}<span>${t}</span><span class="ac-year">${y}</span></div>`;}).join('');acL.classList.add('active');}catch{acL.classList.remove('active');}},350);});
-document.addEventListener('click',e=>{if(!e.target.closest('.recommend-input-area'))acL.classList.remove('active');});
 
 async function selectRecommend(id,type,title){
   acL.classList.remove('active');recI.value=title;const c=document.getElementById('recommendResults');
