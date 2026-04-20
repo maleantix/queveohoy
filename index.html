@@ -33,6 +33,28 @@
   --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-theme="light"] {
+  --bg-primary: #f4f4f8;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f0f5;
+  --surface: #eaeaf0;
+  --border: #d0d0dd;
+  --text-primary: #1a1a2e;
+  --text-secondary: #55556a;
+  --text-muted: #8888a0;
+  --accent: #00b882;
+  --accent-dim: #00b88233;
+  --accent-secondary: #6b4edb;
+  --accent-secondary-dim: #6b4edb33;
+  --warning: #e69500;
+  --red: #dd3355;
+  --gradient-accent: linear-gradient(135deg, #00b882, #009db8);
+  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8f8fc 100%);
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -60,6 +82,50 @@ header {
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
 }
+
+[data-theme="light"] header {
+  background: rgba(244,244,248,0.88);
+}
+
+/* Theme toggle */
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover { border-color: var(--accent); background: var(--bg-card-hover); }
+
+/* Reset button */
+.btn-reset {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--red);
+  background: transparent;
+  color: var(--red);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+.btn-reset:hover { background: var(--red); color: white; }
 
 .header-inner {
   max-width: 1400px;
@@ -225,7 +291,6 @@ select:focus, .date-input:focus { outline: none; border-color: var(--accent); bo
 .date-input {
   background-image: none;
   padding-right: 14px;
-  color-scheme: dark;
 }
 
 .btn {
@@ -759,6 +824,7 @@ select:focus, .date-input:focus { outline: none; border-color: var(--accent); bo
 @media (max-width: 768px) {
   .header-inner { flex-wrap: wrap; height: auto; padding: 12px 0; gap: 10px; }
   .nav-tabs { order: 3; width: 100%; justify-content: center; }
+  .theme-toggle { order: 2; }
   .controls { flex-direction: column; }
   .movie-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
   .modal-header { flex-direction: column; align-items: center; text-align: center; }
@@ -852,6 +918,7 @@ select:focus, .date-input:focus { outline: none; border-color: var(--accent); bo
       <button class="nav-tab" data-page="top10">🏆 Top 10</button>
       <button class="nav-tab" data-page="recommend">💡 Recomendar</button>
     </nav>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
   </div>
 </header>
 
@@ -888,11 +955,11 @@ select:focus, .date-input:focus { outline: none; border-color: var(--accent); bo
       </div>
       <div class="control-group">
         <label>Desde</label>
-        <input type="date" class="date-input" id="dateFrom" />
+        <input type="text" class="date-input" id="dateFrom" placeholder="dd/mm/aaaa" maxlength="10" />
       </div>
       <div class="control-group">
         <label>Hasta</label>
-        <input type="date" class="date-input" id="dateTo" />
+        <input type="text" class="date-input" id="dateTo" placeholder="dd/mm/aaaa" maxlength="10" />
       </div>
       <div class="control-group">
         <label>Atajos</label>
@@ -903,6 +970,7 @@ select:focus, .date-input:focus { outline: none; border-color: var(--accent); bo
           <button class="pill" data-range="next-month">Próximo mes</button>
         </div>
       </div>
+      <button class="btn-reset" onclick="resetFilters()" title="Reiniciar filtros">✕ Reiniciar</button>
     </div>
 
     <div id="discoverResults">
@@ -1030,13 +1098,75 @@ async function init() {
   }
 }
 
-// ===== DATES =====
-function fmt(d) { return d.toISOString().split('T')[0]; }
+// ===== THEME =====
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('sr_theme', next);
+  document.getElementById('themeToggle').textContent = next === 'light' ? '☀️' : '🌙';
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem('sr_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'light' ? '☀️' : '🌙';
+})();
+
+// ===== DATES (dd/mm/yyyy) =====
+function fmtDisplay(d) {
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function fmtApi(dateStr) {
+  // Convert dd/mm/yyyy to yyyy-mm-dd for API
+  const parts = dateStr.split('/');
+  if (parts.length !== 3) return '';
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+function parseDisplayDate(str) {
+  const parts = str.split('/');
+  if (parts.length !== 3) return null;
+  return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+}
+
+// Auto-format date input with slashes
+function setupDateInput(el) {
+  el.addEventListener('input', (e) => {
+    let v = e.target.value.replace(/[^\d]/g, '');
+    if (v.length > 8) v = v.substring(0, 8);
+    if (v.length >= 5) {
+      v = v.substring(0, 2) + '/' + v.substring(2, 4) + '/' + v.substring(4);
+    } else if (v.length >= 3) {
+      v = v.substring(0, 2) + '/' + v.substring(2);
+    }
+    e.target.value = v;
+  });
+  el.addEventListener('change', () => {
+    if (el.value.length === 10) {
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      loadDiscover();
+    }
+  });
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && el.value.length === 10) {
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      loadDiscover();
+    }
+  });
+}
+
+setupDateInput(document.getElementById('dateFrom'));
+setupDateInput(document.getElementById('dateTo'));
 
 function setDefaultDates() {
   const today = new Date();
-  document.getElementById('dateFrom').value = fmt(today);
-  document.getElementById('dateTo').value = fmt(today);
+  document.getElementById('dateFrom').value = fmtDisplay(today);
+  document.getElementById('dateTo').value = fmtDisplay(today);
 }
 
 function setRange(range) {
@@ -1058,10 +1188,21 @@ function setRange(range) {
       to = new Date(today.getFullYear(), today.getMonth() + 2, 0);
       break;
   }
-  document.getElementById('dateFrom').value = fmt(from);
-  document.getElementById('dateTo').value = fmt(to);
+  document.getElementById('dateFrom').value = fmtDisplay(from);
+  document.getElementById('dateTo').value = fmtDisplay(to);
   document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
   event.target.classList.add('active');
+  loadDiscover();
+}
+
+// ===== RESET FILTERS =====
+function resetFilters() {
+  document.getElementById('selType').value = 'movie';
+  document.getElementById('selProvider').value = '';
+  document.getElementById('selGenre').value = '';
+  setDefaultDates();
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('.pill[data-range="today"]').classList.add('active');
   loadDiscover();
 }
 
@@ -1076,18 +1217,29 @@ async function loadDiscover() {
   const type = document.getElementById('selType').value;
   const provider = document.getElementById('selProvider').value;
   const genre = document.getElementById('selGenre').value;
-  const dateFrom = document.getElementById('dateFrom').value;
-  const dateTo = document.getElementById('dateTo').value;
+  const dateFromDisplay = document.getElementById('dateFrom').value;
+  const dateToDisplay = document.getElementById('dateTo').value;
+  const dateFrom = fmtApi(dateFromDisplay);
+  const dateTo = fmtApi(dateToDisplay);
+
+  if (!dateFrom || !dateTo) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📅</div><h3>Fecha no válida</h3><p>Introduce fechas en formato dd/mm/aaaa</p></div>`;
+    return;
+  }
 
   const dateField = type === 'movie' ? 'primary_release_date' : 'first_air_date';
   const params = {
     sort_by: `${dateField}.desc`,
     watch_region: WATCH_REGION,
     with_watch_monetization_types: 'flatrate|free|ads',
+    region: WATCH_REGION,
     [`${dateField}.gte`]: dateFrom,
     [`${dateField}.lte`]: dateTo,
     page: 1
   };
+  if (type === 'movie') {
+    params.with_release_type = '4|5|6'; // Digital, Physical, TV — only releases available in ES
+  }
   if (provider) params.with_watch_providers = provider;
   if (genre) params.with_genres = genre;
 
@@ -1107,7 +1259,7 @@ async function loadDiscover() {
       return item;
     }));
 
-    const title = `Estrenos del ${dateFrom} al ${dateTo}`;
+    const title = `Estrenos del ${dateFromDisplay} al ${dateToDisplay}`;
     container.innerHTML = `<h2 class="section-title">${title} <span class="badge">${data.total_results} resultados</span></h2>`;
     container.innerHTML += `<div class="movie-grid">${withProviders.map(m => renderCard(m, type)).join('')}</div>`;
   } catch (e) {
@@ -1279,7 +1431,7 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
 });
 
 // ===== CONTROL LISTENERS =====
-['selType', 'selProvider', 'selGenre', 'dateFrom', 'dateTo'].forEach(id => {
+['selType', 'selProvider', 'selGenre'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     loadDiscover();
