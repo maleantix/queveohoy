@@ -525,8 +525,21 @@ async function toggleFavorite(e,tmdbId,type,title,posterPath,genreIds){
     try{const r=await gasCall({action:'remove_favorite',usuario:currentUser.usuario,tmdb_id:tmdbId});
     if(r.ok){userFavorites=userFavorites.filter(f=>String(f.tmdb_id)!==String(tmdbId));showToast('Eliminado de favoritos');updateFavIcons(tmdbId,false);}}catch{showToast('Error');}
   }else{
-    try{const r=await gasCall({action:'add_favorite',usuario:currentUser.usuario,tmdb_id:tmdbId,tipo:type,titulo:title,poster_path:posterPath||'',genero_ids:(genreIds||[]).join(',')});
-    if(r.ok){userFavorites.push({tmdb_id:String(tmdbId),tipo:type,titulo:title,poster_path:posterPath,genero_ids:(genreIds||[]).join(',')});showToast('Añadido a favoritos ❤️');updateFavIcons(tmdbId,true);}else{showToast(r.error||'Error');}}catch{showToast('Error');}
+    try{
+      // Fetch full details to get accurate genres and rating
+      let finalGenreIds=genreIds||[];
+      let rating='';
+      try{
+        const det=await tmdb(`/${type}/${tmdbId}`);
+        if(det.genres&&det.genres.length>0) finalGenreIds=det.genres.map(g=>g.id);
+        if(det.vote_average) rating=det.vote_average.toFixed(1);
+      }catch{}
+      const r=await gasCall({action:'add_favorite',usuario:currentUser.usuario,tmdb_id:tmdbId,tipo:type,titulo:title,poster_path:posterPath||'',genero_ids:finalGenreIds.join(','),rating});
+      if(r.ok){
+        userFavorites.push({tmdb_id:String(tmdbId),tipo:type,titulo:title,poster_path:posterPath,genero_ids:finalGenreIds.join(','),rating});
+        showToast('Añadido a favoritos ❤️');updateFavIcons(tmdbId,true);
+      }else{showToast(r.error||'Error');}
+    }catch{showToast('Error');}
   }
 }
 
@@ -775,18 +788,53 @@ async function loadTop10(){
 }
 
 // ===== FAV PAGE =====
-function loadFavoritesPage(){
+async function loadFavoritesPage(){
   const c=document.getElementById('favResults');
   if(userFavorites.length===0){c.innerHTML='<div class="empty-state"><div class="icon">❤️</div><h3>Aún no tienes favoritos</h3><p>Pulsa el corazón en cualquier película o serie</p></div>';return;}
   const mv=userFavorites.filter(f=>f.tipo==='movie').length,sv=userFavorites.filter(f=>f.tipo==='tv').length;
-  let h=`<div class="fav-summary"><div class="fav-stat"><strong>${userFavorites.length}</strong>Total</div><div class="fav-stat"><strong>${mv}</strong>Películas</div><div class="fav-stat"><strong>${sv}</strong>Series</div></div><div class="movie-grid">`;
+
+  // Render cards immediately with stored data
+  let h=`<div class="fav-summary">
+    <div class="fav-stat"><strong>${userFavorites.length}</strong>Total</div>
+    <div class="fav-stat"><strong>${mv}</strong>Películas</div>
+    <div class="fav-stat"><strong>${sv}</strong>Series</div>
+  </div><div class="movie-grid" id="favGrid">`;
+
   userFavorites.forEach(f=>{
     const poster=f.poster_path?`${TMDB_IMG}w342${f.poster_path}`:'';
     const genres=f.genero_ids?f.genero_ids.split(',').slice(0,2).map(id=>genresMap[id.trim()]).filter(Boolean):[];
     const safe=f.titulo.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    h+=`<div class="movie-card" onclick="openModal(${f.tmdb_id},'${f.tipo}')"><div class="poster-wrap">${poster?`<img src="${poster}" alt="${f.titulo}" loading="lazy"/>`:'<div class="no-poster">🎬</div>'}<button class="fav-badge is-fav" data-id="${f.tmdb_id}" onclick="toggleFavorite(event,${f.tmdb_id},'${f.tipo}','${safe}','${f.poster_path||''}',[${f.genero_ids||''}]);setTimeout(loadFavoritesPage,500)">❤️</button></div><div class="info"><h3>${f.titulo}</h3><div class="genre-tags">${genres.map(g=>`<span class="genre-tag">${g}</span>`).join('')}</div></div></div>`;
+    const rating=f.rating?parseFloat(f.rating):null;
+    const rc=rating>=7?'high':rating>=5?'mid':'low';
+    h+=`<div class="movie-card" id="favcard-${f.tmdb_id}" onclick="openModal(${f.tmdb_id},'${f.tipo}')">
+      <div class="poster-wrap">
+        ${poster?`<img src="${poster}" alt="${f.titulo}" loading="lazy"/>`:'<div class="no-poster">🎬</div>'}
+        ${rating?`<div class="rating-badge ${rc}">⭐ ${rating.toFixed(1)}</div>`:''}
+        <button class="fav-badge is-fav" data-id="${f.tmdb_id}" onclick="toggleFavorite(event,${f.tmdb_id},'${f.tipo}','${safe}','${f.poster_path||''}',[${f.genero_ids||''}]);setTimeout(loadFavoritesPage,600)">❤️</button>
+        <div class="provider-badges" id="favprov-${f.tmdb_id}"></div>
+      </div>
+      <div class="info">
+        <h3>${f.titulo}</h3>
+        <div class="meta"><span>${f.tipo==='movie'?'🎬 Película':'📺 Serie'}</span></div>
+        <div class="genre-tags">${genres.map(g=>`<span class="genre-tag">${g}</span>`).join('')}</div>
+      </div>
+    </div>`;
   });
-  h+='</div>';c.innerHTML=h;
+
+  h+='</div>';
+  c.innerHTML=h;
+
+  // Fetch providers async for each favorite and inject into cards
+  userFavorites.forEach(async f=>{
+    try{
+      const w=await tmdb(`/${f.tipo}/${f.tmdb_id}/watch/providers`);
+      const flat=w.results?.ES?.flatrate||[];
+      const el=document.getElementById(`favprov-${f.tmdb_id}`);
+      if(el&&flat.length){
+        el.innerHTML=flat.slice(0,4).map(p=>`<img class="provider-badge-img" src="${TMDB_IMG}w45${p.logo_path}" alt="${p.provider_name}" title="${p.provider_name}"/>`).join('');
+      }
+    }catch{}
+  });
 }
 
 // ===== PERSONAL RECS — ON DEMAND, MULTI-FACTOR + GENRE FILTER =====
