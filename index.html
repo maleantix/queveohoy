@@ -544,13 +544,24 @@ async function init(){
   if(!API_KEY)return;
   try{
     const[mg,tg,wp]=await Promise.all([tmdb('/genre/movie/list'),tmdb('/genre/tv/list'),tmdb('/watch/providers/movie',{watch_region:WATCH_REGION})]);
-    const allG=[...mg.genres,...tg.genres];allG.forEach(g=>genresMap[g.id]=g.name);
-    const gs=document.getElementById('selGenre');gs.innerHTML='<option value="">Todos</option>';
-    const recGs=document.getElementById('recGenre');recGs.innerHTML='<option value="">Todos los géneros</option>';
-    const seen=new Set();allG.forEach(g=>{if(seen.has(g.id))return;seen.add(g.id);
-      gs.innerHTML+=`<option value="${g.id}">${g.name}</option>`;
-      recGs.innerHTML+=`<option value="${g.id}">${g.name}</option>`;
-    });
+
+    // Store genres separately by type
+    const movieGenres=mg.genres;
+    const tvGenres=tg.genres;
+    // Build combined map for display
+    [...movieGenres,...tvGenres].forEach(g=>genresMap[g.id]=g.name);
+
+    // Store on window for dynamic updates
+    window._movieGenres=movieGenres;
+    window._tvGenres=tvGenres;
+
+    // Populate genre selects based on current type
+    updateGenreSelects();
+
+    // Update genres when type changes
+    document.getElementById('selType').addEventListener('change', updateGenreSelects);
+    document.getElementById('recType').addEventListener('change', updateGenreSelects);
+
     const mainP=[8,119,337,350,2,3,384,149,619,1899,63,35,531,283,521];
     const pl=wp.results.filter(p=>mainP.includes(p.provider_id));pl.sort((a,b)=>a.display_priority-b.display_priority);
     const tp=pl.length>0?pl:wp.results.slice(0,20);
@@ -560,6 +571,22 @@ async function init(){
     });
     setDefaultDates();loadTop10();loadFavoritesPage();
   }catch(e){console.error('Init error:',e);}
+}
+
+function updateGenreSelects(){
+  const discoverType=document.getElementById('selType').value;
+  const recType=document.getElementById('recType').value;
+
+  function buildOptions(genres, defaultText){
+    return `<option value="">${defaultText}</option>`+genres.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+  }
+
+  const gs=document.getElementById('selGenre');
+  const recGs=document.getElementById('recGenre');
+  const discoverGenres=discoverType==='movie'?window._movieGenres:window._tvGenres;
+  const recGenres=recType==='movie'?window._movieGenres:window._tvGenres;
+  if(gs && discoverGenres) gs.innerHTML=buildOptions(discoverGenres,'Todos');
+  if(recGs && recGenres) recGs.innerHTML=buildOptions(recGenres,'Todos los géneros');
 }
 
 // ===== DATES =====
@@ -652,23 +679,29 @@ async function loadDiscover(page=1){
   }
 
   const dateF=type==='movie'?'primary_release_date':'first_air_date';
-  // For sorted by date, use dateF; otherwise use vote_average or popularity
   const sortField=sort.startsWith('primary_release_date')||sort.startsWith('first_air_date')
     ?sort.replace('primary_release_date',dateF).replace('first_air_date',dateF)
     :sort;
 
   const params={
     sort_by: sortField,
-    watch_region: WATCH_REGION,
-    region: WATCH_REGION,
-    with_watch_monetization_types:'flatrate|free|ads',
     [`${dateF}.gte`]: df,
     [`${dateF}.lte`]: dt,
     page,
     'vote_count.gte': sort==='vote_average.desc'?50:0
   };
-  if(type==='movie')params.with_release_type='4|5|6';
-  if(prov)params.with_watch_providers=prov;
+
+  if(prov){
+    // Con plataforma: filtrar por disponibilidad en España
+    params.watch_region=WATCH_REGION;
+    params.with_watch_providers=prov;
+    params.with_watch_monetization_types='flatrate';
+  } else {
+    // Sin plataforma: mostrar todo, solo restringir región para ordenación
+    params.region=WATCH_REGION;
+  }
+
+  if(type==='movie' && prov) params.with_release_type='4|5|6';
   if(genre)params.with_genres=genre;
 
   discoverLastParams=params;
