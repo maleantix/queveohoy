@@ -1015,7 +1015,16 @@ function navigateTo(page) {
   const mt=document.querySelector(`.mob-tab[data-page="${page}"]`);if(mt)mt.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=document.getElementById(`page-${page}`);if(pg)pg.classList.add('active');
-  if(page==='favorites')loadFavoritesPage();
+  if(page==='favorites') loadFavoritesPage();
+  if(page==='recommend'){
+    // Clear results and reload favorites so state is fresh
+    document.getElementById('personalRecs').innerHTML='';
+    document.getElementById('searchedItemResult').innerHTML='';
+    document.getElementById('recommendResults').innerHTML='';
+    document.getElementById('recommendInput').value='';
+    document.getElementById('clearSearchBtn').style.display='none';
+    loadUserFavorites();
+  }
   window.scrollTo(0,0);
 }
 
