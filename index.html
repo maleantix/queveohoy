@@ -347,20 +347,21 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
     </div>
     <!-- RECOMMEND -->
     <div class="page" id="page-recommend">
-      <h2 class="section-title" style="margin-bottom:12px">🎯 Recomendado para ti</h2>
-      <div id="personalRecs"></div>
 
-      <h2 class="section-title" style="margin-top:32px;margin-bottom:12px">🔎 Buscar y descubrir similares</h2>
-      <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:16px">Busca cualquier película o serie: aparece la ficha completa y debajo los títulos similares disponibles en España. Puedes marcar cualquiera como favorito ❤️</p>
+      <!-- BUSCADOR ARRIBA DEL TODO -->
+      <h2 class="section-title" style="margin-bottom:8px">🔎 Buscar y descubrir</h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px">Busca una peli o serie: ves la ficha completa, la añades a favoritos ❤️ y debajo aparecen similares.</p>
       <div class="recommend-input-area">
         <input type="text" id="recommendInput" placeholder="Escribe una película o serie..." autocomplete="off"/>
         <div class="autocomplete-list" id="autocompleteList"></div>
         <button id="clearSearchBtn" onclick="clearSearch()" style="display:none;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">✕ Limpiar</button>
       </div>
-      <!-- searched item card shown here -->
       <div id="searchedItemResult"></div>
-      <!-- similar items grid shown here -->
       <div id="recommendResults"></div>
+
+      <!-- RECOMENDACIONES PERSONALES: PELÍCULAS + SERIES POR SEPARADO -->
+      <div id="personalRecs"></div>
+
     </div>
   </main>
 </div>
@@ -548,20 +549,87 @@ function loadFavoritesPage(){
   h+='</div>';c.innerHTML=h;
 }
 
-// ===== PERSONAL RECS =====
+// ===== PERSONAL RECS (split movies / series) =====
 async function loadPersonalRecs(){
   const c=document.getElementById('personalRecs');
-  if(userFavorites.length===0){c.innerHTML='<div class="empty-state"><div class="icon">💡</div><h3>Añade favoritos para recomendaciones personalizadas</h3><p>Cuantos más añadas, mejores serán</p></div>';return;}
+  if(userFavorites.length===0){
+    c.innerHTML='<div class="empty-state"><div class="icon">💡</div><h3>Añade favoritos para recomendaciones personalizadas</h3><p>Cuantos más añadas, mejores serán</p></div>';
+    return;
+  }
   c.innerHTML='<div class="loading-container"><div class="spinner"></div><div class="loading-text">Analizando tus gustos...</div></div>';
   try{
-    const sample=[...userFavorites].sort(()=>Math.random()-0.5).slice(0,5);
-    const allR=[];const seenIds=new Set(userFavorites.map(f=>String(f.tmdb_id)));
-    for(const fav of sample){try{const recs=await tmdb(`/${fav.tipo}/${fav.tmdb_id}/recommendations`);recs.results.forEach(r=>{if(!seenIds.has(String(r.id))){seenIds.add(String(r.id));r._sourceType=fav.tipo;allR.push(r);}});}catch{}}
-    if(allR.length===0){c.innerHTML='<div class="empty-state"><div class="icon">🤔</div><h3>Sin recomendaciones aún</h3><p>Prueba añadiendo más favoritos</p></div>';return;}
-    allR.sort((a,b)=>(b.popularity||0)-(a.popularity||0));const top=allR.slice(0,20);
-    const wp=await Promise.all(top.map(async it=>{const tp=it.media_type||it._sourceType||'movie';try{const w=await tmdb(`/${tp}/${it.id}/watch/providers`);it._providers=w.results?.ES?.flatrate||[];}catch{it._providers=[];}it._resolvedType=tp;return it;}));
-    c.innerHTML=`<h2 class="section-title">🎯 Basado en tus favoritos <span class="badge">${wp.length} sugerencias</span></h2><div class="movie-grid">${wp.map(m=>renderCard(m,m._resolvedType||'movie')).join('')}</div>`;
-  }catch(e){c.innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><h3>Error</h3><p>${e.message}</p></div>`;}
+    const favMovies=userFavorites.filter(f=>f.tipo==='movie');
+    const favSeries=userFavorites.filter(f=>f.tipo==='tv');
+    const seenIds=new Set(userFavorites.map(f=>String(f.tmdb_id)));
+    const movieRecs=[];
+    const seriesRecs=[];
+
+    // Get recs from movie favorites
+    const movieSample=[...favMovies].sort(()=>Math.random()-0.5).slice(0,5);
+    for(const fav of movieSample){
+      try{
+        const r=await tmdb(`/movie/${fav.tmdb_id}/recommendations`);
+        r.results.forEach(item=>{if(!seenIds.has(String(item.id))){seenIds.add(String(item.id));item._resolvedType='movie';movieRecs.push(item);}});
+      }catch{}
+    }
+
+    // Get recs from series favorites
+    const seriesSample=[...favSeries].sort(()=>Math.random()-0.5).slice(0,5);
+    for(const fav of seriesSample){
+      try{
+        const r=await tmdb(`/tv/${fav.tmdb_id}/recommendations`);
+        r.results.forEach(item=>{if(!seenIds.has(String(item.id))){seenIds.add(String(item.id));item._resolvedType='tv';seriesRecs.push(item);}});
+      }catch{}
+    }
+
+    // If only one type of favorites, show a note
+    let html='<div style="margin-top:32px">';
+
+    // --- MOVIES SECTION ---
+    if(favMovies.length>0){
+      movieRecs.sort((a,b)=>(b.popularity||0)-(a.popularity||0));
+      const topMovies=movieRecs.slice(0,20);
+      const withP=await Promise.all(topMovies.map(async it=>{
+        try{const w=await tmdb(`/movie/${it.id}/watch/providers`);it._providers=w.results?.ES?.flatrate||[];}
+        catch{it._providers=[];}return it;
+      }));
+      if(withP.length>0){
+        html+=`<h2 class="section-title">🎬 Películas para ti <span class="badge">${withP.length}</span></h2>`;
+        html+=`<div class="movie-grid">${withP.map(m=>renderCard(m,'movie')).join('')}</div>`;
+      } else {
+        html+=`<h2 class="section-title">🎬 Películas para ti</h2><div class="empty-state" style="padding:40px 0"><div class="icon">🎬</div><p>Añade más películas a favoritos para obtener sugerencias</p></div>`;
+      }
+    }
+
+    // --- SERIES SECTION ---
+    if(favSeries.length>0){
+      seriesRecs.sort((a,b)=>(b.popularity||0)-(a.popularity||0));
+      const topSeries=seriesRecs.slice(0,20);
+      const withP=await Promise.all(topSeries.map(async it=>{
+        try{const w=await tmdb(`/tv/${it.id}/watch/providers`);it._providers=w.results?.ES?.flatrate||[];}
+        catch{it._providers=[];}return it;
+      }));
+      if(withP.length>0){
+        html+=`<h2 class="section-title" style="margin-top:40px">📺 Series para ti <span class="badge">${withP.length}</span></h2>`;
+        html+=`<div class="movie-grid">${withP.map(m=>renderCard(m,'tv')).join('')}</div>`;
+      } else {
+        html+=`<h2 class="section-title" style="margin-top:40px">📺 Series para ti</h2><div class="empty-state" style="padding:40px 0"><div class="icon">📺</div><p>Añade más series a favoritos para obtener sugerencias</p></div>`;
+      }
+    }
+
+    // If no favorites of a type at all, show a hint
+    if(favMovies.length===0){
+      html+=`<h2 class="section-title">🎬 Películas para ti</h2><div style="padding:20px 0;color:var(--text-muted);font-size:0.88rem">Añade películas a favoritos para ver sugerencias aquí.</div>`;
+    }
+    if(favSeries.length===0){
+      html+=`<h2 class="section-title" style="margin-top:32px">📺 Series para ti</h2><div style="padding:20px 0;color:var(--text-muted);font-size:0.88rem">Añade series a favoritos para ver sugerencias aquí.</div>`;
+    }
+
+    html+='</div>';
+    c.innerHTML=html;
+  }catch(e){
+    c.innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><h3>Error</h3><p>${e.message}</p></div>`;
+  }
 }
 
 // ===== RENDER =====
