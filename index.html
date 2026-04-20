@@ -194,6 +194,9 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
 .fav-stat { padding:12px 20px; background:var(--surface); border-radius:var(--radius-sm); font-size:0.85rem; color:var(--text-secondary); }
 .fav-stat strong { display:block; font-size:1.4rem; color:var(--accent); margin-bottom:2px; }
 
+/* SECTION DIVIDER */
+.section-divider { border:none; border-top:1px solid var(--border); margin:32px 0; }
+
 /* SEARCH BUTTON */
 .btn-search { padding:10px 22px; border-radius:var(--radius-sm); border:none; background:var(--accent); color:var(--bg-primary); font-family:'Outfit',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer; transition:var(--transition); display:flex; align-items:center; gap:6px; white-space:nowrap; }
 .btn-search:hover { opacity:0.88; transform:translateY(-1px); }
@@ -395,25 +398,24 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
     <!-- RECOMMEND -->
     <div class="page" id="page-recommend">
 
-      <!-- BUSCADOR ARRIBA DEL TODO -->
-      <h2 class="section-title" style="margin-bottom:8px">🔎 Buscar y descubrir</h2>
-      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px">Busca una peli o serie: ves la ficha completa, la añades a favoritos ❤️ y debajo aparecen similares.</p>
-      <div class="recommend-input-area">
-        <input type="text" id="recommendInput" placeholder="Escribe una película o serie..." autocomplete="off"/>
-        <div class="autocomplete-list" id="autocompleteList"></div>
-        <button id="clearSearchBtn" onclick="clearSearch()" style="display:none;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">✕ Limpiar</button>
+      <!-- BUSCADOR 1: buscar título concreto -->
+      <div style="margin-bottom:32px">
+        <h2 class="section-title" style="margin-bottom:6px">🔎 Buscar título</h2>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Busca una peli o serie, añádela a favoritos ❤️ y ve títulos similares.</p>
+        <div class="recommend-input-area">
+          <input type="text" id="recommendInput" placeholder="Escribe una película o serie..." autocomplete="off"/>
+          <div class="autocomplete-list" id="autocompleteList"></div>
+          <button id="clearSearchBtn" onclick="clearSearch()" style="display:none;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">✕ Limpiar</button>
+        </div>
+        <div id="searchedItemResult"></div>
+        <div id="recommendResults"></div>
       </div>
-      <div id="searchedItemResult"></div>
-      <div id="recommendResults"></div>
 
-      <!-- RECOMENDACIONES PERSONALES: PELÍCULAS + SERIES POR SEPARADO -->
-      <div id="personalRecs"></div>
-
-      <!-- EXPLORAR POR CATEGORÍA -->
-      <div style="margin-top:40px">
-        <h2 class="section-title" style="margin-bottom:8px">🗂 Explorar por categoría</h2>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:14px">Escoge un tipo y género para ver los 20 mejores títulos de esa categoría.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
+      <!-- BUSCADOR 2: explorar por categoría -->
+      <div style="margin-bottom:32px">
+        <h2 class="section-title" style="margin-bottom:6px">🗂 Explorar por categoría</h2>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Elige tipo y género para ver los 20 mejores títulos de esa categoría.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:0">
           <div class="control-group"><label>Tipo</label><select id="catType"><option value="movie">🎬 Películas</option><option value="tv">📺 Series</option></select></div>
           <div class="control-group"><label>Género</label><select id="catGenre"><option value="">— Elige género —</option></select></div>
           <div class="control-group"><label>Ordenar</label>
@@ -425,8 +427,15 @@ select:focus,.date-input:focus { outline:none; border-color:var(--accent); box-s
           </div>
           <button class="btn-search" onclick="loadCategoryExplorer()">🔍 Explorar</button>
         </div>
-        <div id="categoryResults"></div>
+        <div id="categoryResults" style="margin-top:20px"></div>
       </div>
+
+      <!-- RECOMENDACIONES PERSONALES -->
+      <hr class="section-divider"/>
+      <h2 class="section-title" style="margin-bottom:6px">🎯 Recomendado para ti</h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px">Basado en tus favoritos, separado por películas y series.</p>
+      <div id="personalRecs"></div>
+
     </div>
   </main>
 </div>
@@ -888,7 +897,7 @@ async function loadPersonalRecs(){
         .map(([id])=>genresMap[id]).filter(Boolean).join(', ');
     }
 
-    let html='<div style="margin-top:32px">';
+    let html='<div>';
 
     // PELÍCULAS
     if(favMovies.length>0){
